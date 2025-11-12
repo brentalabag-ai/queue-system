@@ -140,7 +140,7 @@
                                         <form id="paymentForm">
                                             <div class="form-field">
                                                 <label for="name">NAME:</label>
-                                                <input type="text" class="form-control" id="name" value="John Doe" readonly>
+                                                <input type="text" class="form-control" id="name">
                                             </div>
 
                                             <div class="form-field">
