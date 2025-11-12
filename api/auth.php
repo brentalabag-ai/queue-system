@@ -55,7 +55,7 @@ elseif ($_POST['action'] === 'student_login') {
     if ($stmt->rowCount() > 0) {
         $student = $stmt->fetch(PDO::FETCH_ASSOC);
         $_SESSION['student'] = $student;
-        header('Location: ../idx.php');
+        header('Location: ../student-dashboard.php');
         exit();
     } else {
         header('Location: ../index.php');

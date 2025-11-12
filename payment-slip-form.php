@@ -1,3 +1,68 @@
+<?php
+session_start();
+require_once 'config/database.php';
+
+if (!isset($_SESSION['student'])) {
+    header('Location: index.php');
+    exit();
+}
+
+$student = $_SESSION['student'];
+$database = new Database();
+$db = $database->getConnection();
+
+// Handle payment slip submission and queue request
+if ($_POST['action'] ?? '' === 'submit_payment_slip') {
+    // Validate payment slip data
+    $amount = $_POST['amount'] ?? '';
+    $payment_for = $_POST['payment_for'] ?? [];
+    $other_specify = $_POST['other_specify'] ?? '';
+    
+    if (empty($amount) || empty($payment_for)) {
+        header('Location: student-dashboard.php?error=Please fill all required fields in the payment slip');
+        exit();
+    }
+    
+    // Check for active queue
+    $checkQuery = "SELECT * FROM queue WHERE student_id = :student_id AND status IN ('waiting', 'serving')";
+    $checkStmt = $db->prepare($checkQuery);
+    $checkStmt->bindParam(':student_id', $student['student_id']);
+    $checkStmt->execute();
+    
+    if ($checkStmt->rowCount() > 0) {
+        $existing = $checkStmt->fetch(PDO::FETCH_ASSOC);
+        header('Location: student-dashboard.php?error=You already have queue number ' . $existing['queue_number']);
+        exit();
+    }
+    
+    // Get next queue number
+    $maxQuery = "SELECT MAX(queue_number) as max_number FROM queue WHERE DATE(time_in) = CURDATE()";
+    $maxStmt = $db->prepare($maxQuery);
+    $maxStmt->execute();
+    $maxResult = $maxStmt->fetch(PDO::FETCH_ASSOC);
+    $nextQueueNumber = ($maxResult['max_number'] ?? 0) + 1;
+    
+    // Insert new queue with payment slip data
+    $insertQuery = "INSERT INTO queue (student_id, queue_number, status, time_in, payment_amount, payment_for) 
+                   VALUES (:student_id, :queue_number, 'waiting', NOW(), :amount, :payment_for)";
+    $insertStmt = $db->prepare($insertQuery);
+    $insertStmt->bindParam(':student_id', $student['student_id']);
+    $insertStmt->bindParam(':queue_number', $nextQueueNumber);
+    $insertStmt->bindParam(':amount', $amount);
+    $paymentForString = implode(', ', $payment_for);
+    if (!empty($other_specify) && in_array('others', $payment_for)) {
+        $paymentForString .= " ($other_specify)";
+    }
+    $insertStmt->bindParam(':payment_for', $paymentForString);
+    
+    if ($insertStmt->execute()) {
+        header('Location: student-dashboard.php?message=Queue number ' . $nextQueueNumber . ' assigned successfully!');
+    } else {
+        header('Location: student-dashboard.php?error=Failed to get queue number');
+    }
+    exit();
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -136,16 +201,18 @@
                                             <p class="mb-1">City of San Fernando, 2500 La Union</p>
                                             <h5 class="mb-0">PAYMENT SLIP</h5>
                                         </div>
+                                            <!--  action="api/queue.php" -->
+                                        <form id="paymentForm" method="POST" action="student-dashboard.php">
+                                        <input type="hidden" name="action" value="submit_payment_slip">
 
-                                        <form id="paymentForm">
                                             <div class="form-field">
                                                 <label for="name">NAME:</label>
-                                                <input type="text" class="form-control" id="name">
+                                                <input type="text" class="form-control" id="name" value="<?php echo $student['name']; ?>">
                                             </div>
 
                                             <div class="form-field">
                                                 <label for="student_id">ID NO:</label>
-                                                <input type="text" class="form-control" id="student_id" value="2023-00123" readonly>
+                                                <input type="text" class="form-control" id="student_id" value="<?php echo $student['student_id']; ?>" readonly>
                                             </div>
 
                                             <div class="form-field">
@@ -176,19 +243,20 @@
                                                         <input type="text" class="form-control mt-1" name="other_specify" placeholder="Specify other payment" id="otherSpecify" disabled>
                                                     </div>
                                                 </div>
+                                                <div class="d-grid gap-2 mt-4">
+                                                    <!-- Go Back redirects home -->
+                                                    <button class="btn btn-secondary btn-lg" type="button" onclick="window.location.href='index.html'">
+                                                        <i class="fas fa-home me-2"></i> Go Back
+                                                    </button>
+                                                    <!-- Confirm opens modal -->
+                                                    <button class="btn btn-success btn-lg" type="submit" id="confirmBtn">
+                                                        <i class="fas fa-ticket-alt me-2"></i>Confirm
+                                                    </button>
+                                                </div>
                                             </div>
                                         </form>
                                         <!-- Buttons -->
-                                        <div class="d-grid gap-2 mt-4">
-                                            <!-- Go Back redirects home -->
-                                            <button class="btn btn-secondary btn-lg" type="button" onclick="window.location.href='index.html'">
-                                                <i class="fas fa-home me-2"></i> Go Back
-                                            </button>
-                                            <!-- Confirm opens modal -->
-                                            <button class="btn btn-success btn-lg" type="button" id="confirmBtn">
-                                                <i class="fas fa-ticket-alt me-2"></i>Confirm
-                                            </button>
-                                        </div>
+                                        
                                     </div>
                                 </div>
                             </div>
@@ -313,10 +381,6 @@
                 }
             }
 
-            // Prevent form submission
-            document.getElementById('paymentForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-            });
         </script>
     </body>
 </html>

@@ -94,7 +94,7 @@ if ($currentQueue && $currentQueue['status'] === 'waiting') {
                         </div>
                         
                         <!-- Get Queue Number -->
-                        <!-- <div class="d-grid gap-2 mb-4">
+                        <div class="d-grid gap-2 mb-4">
                             <form method="POST" action="api/queue.php">
                                 <input type="hidden" name="action" value="request_queue">
                                 <input type="hidden" name="student_id" value="<?php echo $student['student_id']; ?>">
@@ -102,7 +102,7 @@ if ($currentQueue && $currentQueue['status'] === 'waiting') {
                                     <i class="fas fa-ticket-alt me-2"></i>Get Queue Number
                                 </button>
                             </form>
-                        </div> -->
+                        </div>
 
                         <!-- Button for Payment Slip Form -->
                          <div class="d-grid gap-2 mb-4">
