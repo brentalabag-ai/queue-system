@@ -210,22 +210,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Payment Modal Handler
-        var paymentModal = document.getElementById('paymentModal');
-        paymentModal.addEventListener('show.bs.modal', function (event) {
-            var button = event.relatedTarget;
-            var queueId = button.getAttribute('data-queue-id');
-            var studentName = button.getAttribute('data-student-name');
-            
-            document.getElementById('modalQueueId').value = queueId;
-            document.getElementById('modalStudentName').value = studentName;
-        });
-
-        // Auto-refresh every 15 seconds
-        setTimeout(function() {
-            location.reload();
-        }, 15000);
-    </script>
+    <script src="js/cashier.js"></script>
 </body>
 </html>

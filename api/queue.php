@@ -3,7 +3,7 @@ session_start();
 require_once '../config/database.php';
 
 if (!isset($_SESSION['user']) && !isset($_SESSION['student'])) {
-    header('Location: ../index.php?error=Not authenticated');
+    header('Location: ../index.php');
     exit();
 }
 
@@ -14,9 +14,9 @@ $db = $database->getConnection();
 if (!isset($_POST['action'])) {
     // If no action specified, redirect based on user type
     if (isset($_SESSION['student'])) {
-        header('Location: ../student-dashboard.php?error=Invalid request');
+        header('Location: ../student-dashboard.php');
     } else {
-        header('Location: ../cashier-dashboard.php?error=Invalid request');
+        header('Location: ../cashier-dashboard.php');
     }
     exit();
 }
@@ -25,7 +25,7 @@ $action = $_POST['action'];
 
 if ($action === 'request_queue') {
     if (!isset($_SESSION['student'])) {
-        header('Location: ../student-dashboard.php?error=Student not logged in');
+        header('Location: ../student-dashboard.php');
         exit();
     }
     
@@ -37,19 +37,19 @@ if ($action === 'request_queue') {
     try {
         // Validate amount
         if (empty($amount) || $amount <= 0) {
-            header('Location: ../payment-slip.php?error=Please enter a valid amount');
+            header('Location: ../payment-slip.php');
             exit();
         }
         
         // Validate payment type
         if (empty($paymentFor)) {
-            header('Location: ../payment-slip.php?error=Please select at least one payment type');
+            header('Location: ../payment-slip.php');
             exit();
         }
         
         // Validate "others" specification
         if (in_array('others', $paymentFor) && empty($otherSpecify)) {
-            header('Location: ../payment-slip.php?error=Please specify the other payment type');
+            header('Location: ../payment-slip.php');
             exit();
         }
         
@@ -61,7 +61,7 @@ if ($action === 'request_queue') {
         
         if ($checkStmt->rowCount() > 0) {
             $existing = $checkStmt->fetch(PDO::FETCH_ASSOC);
-            header('Location: ../student-dashboard.php?error=You already have an active queue number: ' . $existing['queue_number']);
+            header('Location: ../student-dashboard.php');
             exit();
         }
         
@@ -80,20 +80,20 @@ if ($action === 'request_queue') {
         
         if ($insertStmt->execute()) {
             // Success - just create the queue without transaction records
-            header('Location: ../student-dashboard.php?message=Queue number ' . $nextQueueNumber . ' assigned successfully!');
+            header('Location: ../student-dashboard.php');
         } else {
-            header('Location: ../payment-slip.php?error=Failed to get queue number');
+            header('Location: ../payment-slip.php');
         }
         
     } catch (PDOException $e) {
         error_log("Queue Error: " . $e->getMessage());
-        header('Location: ../payment-slip.php?error=System error. Please try again.');
+        header('Location: ../payment-slip.php');
         exit();
     }
     
 } elseif ($action === 'void_queue') {
     if (!isset($_SESSION['user']) || ($_SESSION['user']['role'] !== 'admin' && $_SESSION['user']['role'] !== 'cashier')) {
-        header('Location: ../cashier-dashboard.php?error=Insufficient permissions');
+        header('Location: ../cashier-dashboard.php');
         exit();
     }
     
@@ -105,20 +105,20 @@ if ($action === 'request_queue') {
         $updateStmt->bindParam(':queue_id', $queueId);
         
         if ($updateStmt->execute()) {
-            header('Location: ../cashier-dashboard.php?message=Queue entry voided successfully');
+            header('Location: ../cashier-dashboard.php');
         } else {
-            header('Location: ../cashier-dashboard.php?error=Failed to void queue entry');
+            header('Location: ../cashier-dashboard.php');
         }
     } catch (PDOException $e) {
-        header('Location: ../cashier-dashboard.php?error=Database error: ' . $e->getMessage());
+        header('Location: ../cashier-dashboard.php');
     }
     
 } else {
     // Unknown action
     if (isset($_SESSION['student'])) {
-        header('Location: ../student-dashboard.php?error=Unknown action');
+        header('Location: ../student-dashboard.php');
     } else {
-        header('Location: ../cashier-dashboard.php?error=Unknown action');
+        header('Location: ../cashier-dashboard.php');
     }
 }
 
